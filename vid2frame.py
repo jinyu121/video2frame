@@ -27,9 +27,6 @@ class LMDBStorage(Storage):
         with self.database.begin(write=True, buffers=True) as txn:
             txn.put(k, v)
 
-    def __del__(self):
-        self.database.close()
-
 
 class HDF5Storage(Storage):
     def __init__(self, path):
@@ -38,9 +35,6 @@ class HDF5Storage(Storage):
 
     def put(self, k, v):
         self.database[k] = v
-
-    def __del__(self):
-        self.database.close()
 
 
 def parse_args():
@@ -213,3 +207,4 @@ if "__main__" == __name__:
                 process(args, ith, video_info, frame_db, pbar)
 
     print("Done")
+
