@@ -138,11 +138,13 @@ def video_to_frames(args, video_file, tmp_dir):
     ]
     subprocess.call(cmd)
 
-
-def sample_frames(args, tmp_dir):
     frames = [(int(f.name.split('.')[0]), f) for f in tmp_dir.iterdir()]
     frames.sort(key=lambda x: x[0])
 
+    return frames
+
+
+def sample_frames(args, frames):
     if args.sample_mode:
         n = int(args.sample)
         assert n > 0, "N must >0, but get {}".format(n)
@@ -172,8 +174,8 @@ def process(args, ith, video_info, frame_db, pbar=None):
     tmp_dir = Path(args.tmp_dir) / video_file.name
     tmp_dir.mkdir(exist_ok=True)
 
-    video_to_frames(args, video_file, tmp_dir)
-    files = sample_frames(args, tmp_dir)
+    frames = video_to_frames(args, video_file, tmp_dir)
+    files = sample_frames(args, frames)
 
     try:
         for fid, f_name in files:
