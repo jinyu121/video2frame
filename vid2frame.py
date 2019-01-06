@@ -2,7 +2,7 @@ import argparse
 import json
 import shutil
 import subprocess
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import shuffle
 
@@ -213,6 +213,8 @@ if "__main__" == __name__:
             else:
                 process(args, ith, video_info, frame_db, pbar)
 
-    wait(executor)
+    if executor:
+        executor.shutdown()
+
     frame_db.close()
     print("Done")
