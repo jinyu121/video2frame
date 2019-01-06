@@ -2,7 +2,7 @@ import argparse
 import json
 import shutil
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
 from random import shuffle
 
@@ -14,8 +14,14 @@ from tqdm import tqdm
 
 
 class Storage:
+    def __init__(self):
+        self.database = None
+
     def put(self, k, v):
         raise NotImplementedError()
+
+    def close(self):
+        self.database.close()
 
 
 class LMDBStorage(Storage):
@@ -31,7 +37,7 @@ class LMDBStorage(Storage):
 class HDF5Storage(Storage):
     def __init__(self, path):
         super().__init__()
-        self.database = h5py.File(path, 'a')
+        self.database = h5py.File(path, 'w', driver='mpio')
 
     def put(self, k, v):
         self.database[k] = v
@@ -208,5 +214,6 @@ if "__main__" == __name__:
             else:
                 process(args, ith, video_info, frame_db, pbar)
 
+    wait(executor)
+    frame_db.close()
     print("Done")
-
