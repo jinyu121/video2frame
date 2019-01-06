@@ -37,7 +37,7 @@ class LMDBStorage(Storage):
 class HDF5Storage(Storage):
     def __init__(self, path):
         super().__init__()
-        self.database = h5py.File(path, 'w', driver='mpio')
+        self.database = h5py.File(path, 'w')
 
     def put(self, k, v):
         self.database[k] = v
@@ -160,7 +160,7 @@ def sample_frames(args, frames):
             if n == 1:
                 index = [tot >> 1]
             else:
-                step = tot * 1. / (n - 1)
+                step = (tot - 1) * 1. / (n - 1)
                 index = [round(x * step) for x in range(n)]
             frames = [frames[x] for x in index]
         elif args.sample_mode == 2:  # Randomly sample n frames
@@ -174,7 +174,7 @@ def sample_frames(args, frames):
     return frames
 
 
-def process(args, ith, video_info, frame_db, pbar=None):
+def process(args, video_ith, video_info, frame_db, pbar=None):
     video_file = Path(video_info['path'])
     tqdm.write(str(video_file))
     tmp_dir = Path(args.tmp_dir) / video_file.name
@@ -184,11 +184,10 @@ def process(args, ith, video_info, frame_db, pbar=None):
     files = sample_frames(args, frames)
 
     try:
-        for fid, f_name in files:
-            key = "{:08d}/{:08d}".format(ith, fid)
-            s = (tmp_dir / f_name).open("rb").read()
+        for frame_ith, (frame_id, frame_path) in enumerate(files):
+            key = "{:08d}/{:08d}".format(video_ith, frame_ith)
+            s = (tmp_dir / frame_path).open("rb").read()
             frame_db.put(key, s if args.db_type == 'LMDB' else np.void(s))
-
     except RuntimeError as e:
         tqdm.write("When writing [{}] to file, error occurs:{}".format(video_file, e))
 
