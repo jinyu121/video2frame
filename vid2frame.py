@@ -182,7 +182,7 @@ def process(args, video_ith, video_info, frame_db, pbar=None):
 
     try:
         frames = video_to_frames(args, video_file, tmp_dir)
-        if not files:
+        if not frames:
             raise RuntimeError("Extract frame failed: {}".format(video_file))
 
         files = sample_frames(args, frames)
