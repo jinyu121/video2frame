@@ -101,33 +101,33 @@ def modify_args(args):
         args.db_type = 'LMDB'
 
     # Parse the resize mode
+    args.vf_setting = []
     if args.resize_mode == 0:
-        args.vf_scale = []
+        pass
     elif args.resize_mode == 1:
         W, H, *_ = args.resize.split("-")
         W, H = int(W), int(H)
         assert W > 0 and H > 0
-        args.vf_scale = [
+        args.vf_setting.extend([
             "-vf", "scale={}:{}".format(W, H)
-        ]
+        ])
     elif args.resize_mode == 2:
         side = args.resize[0].lower()
         assert side in ['l', 's'], "The (L)onger side, or the (S)horter side?"
         scale = int(args.resize[1:])
         assert scale > 0
-        args.vf_scale = [
+        args.vf_setting.extend([
             "-vf",
             "scale='iw*1.0/{0}(iw,ih)*{1}':'ih*1.0/{0}(iw,ih)*{1}'".format("max" if side == 'l' else 'min', scale)
-        ]
+        ])
     else:
         raise Exception('Unspecified frame scale option')
 
-    args.vf_sample = []
+    # Parse the fps setting
     if args.fps > 0:
-        args.vf_sample = [
-            "-vsync", "vfr",
-            "-vf", "fps={}".format(args.fps)
-        ]
+        args.vf_setting.extend([
+            "-r", "{}".format(args.fps)
+        ])
 
     return args
 
@@ -136,9 +136,9 @@ def video_to_frames(args, video_file, tmp_dir):
     cmd = [
         "ffmpeg",
         "-loglevel", "panic",
+        "-vsync", "vfr",
         "-i", str(video_file),
-        *args.vf_scale,
-        *args.vf_sample,
+        *args.vf_setting,
         "-qscale:v", "2",
         str(tmp_dir / "%8d.jpg")
     ]
@@ -183,7 +183,7 @@ def process(args, video_ith, video_info, frame_db, pbar=None):
     try:
         frames = video_to_frames(args, video_file, tmp_dir)
         if not frames:
-            raise RuntimeError("Extract frame failed: {}".format(video_file))
+            raise RuntimeError("Extract frame failed".format(video_file))
 
         files = sample_frames(args, frames)
         if not files:
