@@ -18,13 +18,14 @@ class VideoDataset(Dataset):
 
         self.annotation = json.load(open(annotation_file, "r"))
         self.database = h5py.File(database_file, 'r')
-        self.len = len(self.annotation)
+        self.videos = sorted([int(x) for x in self.database.keys()])
 
     def __getitem__(self, index):
-        annotation = self.annotation[index]
+        video_id = self.videos[index]
+        annotation = self.annotation[video_id]
 
         # Get the binary frames
-        frames_binary = self.database["{:08d}".format(index)]
+        frames_binary = self.database["{:08d}".format(video_id)]
 
         # Sample the frames
         if self.num_frames_per_clip:
@@ -32,7 +33,7 @@ class VideoDataset(Dataset):
                 frame_index = [len(frames_binary) / 2]
             else:
                 skips = (len(frames_binary) - 1) * 1. / (self.num_frames_per_clip - 1)
-                frame_index = [round(x * skips) for x in range(self.num_frames_per_clip)]
+                frame_index = [round(fi * skips) for fi in range(self.num_frames_per_clip)]
         else:
             frame_index = list(range(len(frames_binary)))
 
@@ -41,10 +42,10 @@ class VideoDataset(Dataset):
             misc.imread(
                 BytesIO(
                     np.asarray(
-                        frames_binary["{:08d}".format(idx)]
+                        frames_binary["{:08d}".format(fi)]
                     ).tostring()
                 )
-            ) for idx in frame_index
+            ) for fi in frame_index
         ]
         video_data = np.array(video_data)
 
@@ -59,7 +60,7 @@ class VideoDataset(Dataset):
         return video_data, annotation['class']
 
     def __len__(self):
-        return self.len
+        return len(self.videos)
 
     def __repr__(self):
         return "{} {} videos, {}, {}".format(
@@ -80,13 +81,13 @@ if "__main__" == __name__:
 
     dataset = VideoDataset(args.annotation, args.data, args.frames, args.crop)
     error_index = []
-    for x in trange(len(dataset)):
+    for i in trange(len(dataset)):
         try:
-            frame, label = dataset[x]
-            tqdm.write("Index {}, Class Label {}, Shape {}".format(x, label, frame.shape))
+            frame, label = dataset[i]
+            tqdm.write("Index {}, Class Label {}, Shape {}".format(i, label, frame.shape))
         except Exception as e:
-            tqdm.write("=====> Video {} check failed".format(x))
-            error_index.append(x)
+            tqdm.write("=====> Video {} check failed".format(i))
+            error_index.append(i)
 
     if not error_index:
         print("All is well! Congratulations!")
