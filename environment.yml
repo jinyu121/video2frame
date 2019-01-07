@@ -1,0 +1,10 @@
+name: vid2frame
+dependencies:
+  - python
+  - tqdm
+  - numpy
+  - lmdb
+  - python-lmdb
+  - h5py
+  - pip:
+      - easydict
