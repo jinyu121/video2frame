@@ -15,14 +15,14 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     We recommend to use [conda](https://conda.io/) to establish the environment. Just using 
     
     ```sh
-    conda env create -f environment.yml
+    conda env create -f install/conda-environment.yml
     ```
     
     You can also do it manually. This project relays on the following packages:
     
     - Python
     - FFmpeg
-    - Python packages (can be installed using `pip install -r requirements.txt`)
+    - Python packages (can be installed using `pip install -r install/pip-requirements.txt`)
         + h5py
         + lmdb
         + numpy
