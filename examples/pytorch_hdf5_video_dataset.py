@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm, trange
 
 
-class VideoDataset(Dataset):
+class HDF5VideoDataset(Dataset):
     def __init__(self, annotation_file, database_file, num_frames_per_clip=0, crop_size=0):
         self.num_frames_per_clip = num_frames_per_clip
         assert self.num_frames_per_clip >= 0
@@ -79,7 +79,7 @@ if "__main__" == __name__:
     parser.add_argument("--crop", type=int, default=160, help="Crop size")
     args = parser.parse_args()
 
-    dataset = VideoDataset(args.annotation, args.data, args.frames, args.crop)
+    dataset = HDF5VideoDataset(args.annotation, args.data, args.frames, args.crop)
     error_index = []
     for i in trange(len(dataset)):
         try:
@@ -89,6 +89,7 @@ if "__main__" == __name__:
             tqdm.write("=====> Video {} check failed".format(i))
             error_index.append(i)
 
+    print("There are {} videos.".format(len(dataset)))
     if not error_index:
         print("All is well! Congratulations!")
     else:
