@@ -57,7 +57,7 @@ def parse_args():
     parser.add_argument("--resize_mode", type=int, default=0, choices=[0, 1, 2],
                         help="Resize mode\n"
                              "  0: Do not resize\n"
-                             "  1: 800-600: Resize to W*H\n"
+                             "  1: 800x600: Resize to W*H\n"
                              "  2: L600 or S600: keep the aspect ration and scale the longer/shorter side to s"
                         )
     parser.add_argument("--resize", type=str, help="Parameter of resize mode")
@@ -106,7 +106,7 @@ def modify_args(args):
     if args.resize_mode == 0:
         pass
     elif args.resize_mode == 1:
-        W, H, *_ = args.resize.split("-")
+        W, H, *_ = args.resize.split("x")
         W, H = int(W), int(H)
         assert W > 0 and H > 0
         args.vf_setting.extend([
