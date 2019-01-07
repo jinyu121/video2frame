@@ -87,7 +87,10 @@ def parse_args():
 def modify_args(args):
     # check the options
     if not args.db_name:
-        args.db_name = args.annotation_file.strip(".json")
+        if args.annotation_file.lower().endswith(".json"):
+            args.db_name = args.annotation_file[:-5]
+        else:
+            args.db_name = args.annotation_file
 
     if args.db_name.lower().endswith(".hdf5"):
         args.db_type = 'HDF5'
