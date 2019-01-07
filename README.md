@@ -44,78 +44,78 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     ]
     ```
     
-1. ### Extract frames using `vid2frame.py`
+1. ### Extract frames using `video2frame.py`
     
     #### Examples
     
     + Using the default options:
      
         ```sh
-        python vid2feame.py dataset.json
+        python video2frame.py dataset.json
         ```
         
     + Specify the output file name:
     
         ```sh
-        python vid2feame.py dataset.json --db_name my_dataset
+        python video2frame.py dataset.json --db_name my_dataset
         ```
         
     + Using lmdb rather than hdf5:
     
         ```sh
-        python vid2feame.py dataset.json --db_type LMDB
+        python video2frame.py dataset.json --db_type LMDB
         ``` 
         or 
         ```sh
-        python vid2feame.py dataset.json --db_name my_dataset.lmdb
+        python video2frame.py dataset.json --db_name my_dataset.lmdb
         ```
     
     + Resize the frames to 320x240:
         
         ```sh
-        python vid2feame.py dataset.json --resize_mode 1 --resize 320x240
+        python video2frame.py dataset.json --resize_mode 1 --resize 320x240
         ```
     
     + Keep the aspect ration, and resize the shorter side to 320:
     
         ```sh
-        python vid2feame.py dataset.json --resize_mode 2 --resize S320
+        python video2frame.py dataset.json --resize_mode 2 --resize S320
         ```
     
     + Keep the aspect ration, and resize the longer side to 240:
     
         ```sh
-        python vid2feame.py dataset.json --resize_mode 2 --resize L240
+        python video2frame.py dataset.json --resize_mode 2 --resize L240
         ```
         
     + Extract 5 frames per second:
     
         ```sh
-        python vid2feame.py dataset.json --fps 5
+        python video2frame.py dataset.json --fps 5
         ```
     
     + Uniformly sample 16 frames per video:
     
         ```sh
-        python vid2feame.py dataset.json --sample_mode 1 --sample 16
+        python video2frame.py dataset.json --sample_mode 1 --sample 16
         ```
     
     + Randomly sample 16 frames per video:
     
         ```sh
-        python vid2feame.py dataset.json --sample_mode 2 --sample 16
+        python video2frame.py dataset.json --sample_mode 2 --sample 16
         ```
         
     + Use 16 threads to speed-up:
     
         ```sh
-        python vid2feame.py dataset.json -t 16
+        python video2frame.py dataset.json -t 16
         ```
     
     + Resize the frames to 320x240, extract one frame every two seconds, uniformly sample 32 frames per video, and using 20 threads:
     
         ```sh
-        python vid2feame.py dataset.json \
+        python video2frame.py dataset.json \
             --resize_mode 1 \ 
             --resize 320x240 \
             --fps 0.5 \
@@ -127,11 +127,11 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     #### All parameters
     
     ```text
-    usage: vid2frame.py [-h] [--db_name DB_NAME] [--db_type {LMDB,HDF5}]
-                        [--tmp_dir TMP_DIR] [--resize_mode {0,1,2}]
-                        [--resize RESIZE] [--fps FPS] [--sample_mode {0,1,2,3}]
-                        [--sample SAMPLE] [-t THREADS] [-nrm]
-                        annotation_file
+    usage: video2frame.py [-h] [--db_name DB_NAME] [--db_type {LMDB,HDF5}]
+                          [--tmp_dir TMP_DIR] [--resize_mode {0,1,2}]
+                          [--resize RESIZE] [--fps FPS] [--sample_mode {0,1,2,3}]
+                          [--sample SAMPLE] [-t THREADS] [-nrm]
+                          annotation_file
     
     positional arguments:
       annotation_file       The annotation file, in json format
