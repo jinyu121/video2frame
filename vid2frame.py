@@ -205,6 +205,7 @@ def process(args, video_ith, video_info, frame_db, pbar=None):
 
 if "__main__" == __name__:
     args = parse_args()
+    Path(args.tmp_dir).mkdir(exist_ok=True)
 
     frame_db = LMDBStorage(args.db_name) if args.db_type == 'LMDB' else HDF5Storage(args.db_name)
 
