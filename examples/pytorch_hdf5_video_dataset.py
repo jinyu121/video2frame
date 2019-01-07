@@ -47,15 +47,15 @@ class VideoDataset(Dataset):
                 )
             ) for fi in frame_index
         ]
-        video_data = np.array(video_data)
+        video_data = np.array(video_data).transpose([3, 0, 1, 2])
 
         # Crop the videos
         if self.crop_size:
-            _, h, w, _ = video_data.shape
+            _, _, h, w = video_data.shape
             y1 = randint(0, h - self.crop_size - 1)
             x1 = randint(0, w - self.crop_size - 1)
             y2, x2 = y1 + self.crop_size, x1 + self.crop_size
-            video_data = video_data[:, y1:y2, x1:x2, :]
+            video_data = video_data[:, :, y1:y2, x1:x2]
 
         return video_data, annotation['class']
 
