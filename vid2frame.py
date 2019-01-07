@@ -88,17 +88,18 @@ def modify_args(args):
     # check the options
     if not args.db_name:
         args.db_name = args.annotation_file.strip(".json")
-    if not (args.db_name.lower().endswith(".hdf5") or args.db_name.lower().endswith(".lmdb")):
+
+    if args.db_name.lower().endswith(".hdf5"):
+        args.db_type = 'HDF5'
+    elif args.db_name.lower().endswith(".lmdb"):
+        args.db_type = 'LMDB'
+    else:
         if args.db_type == 'HDF5':
             args.db_name += ".hdf5"
         elif args.db_type == 'LMDB':
             args.db_name += ".lmdb"
         else:
             raise Exception('Unknown db_type')
-    elif args.db_name.lower().endswith(".hdf5"):
-        args.db_type = 'HDF5'
-    elif args.db_name.lower().endswith(".lmdb"):
-        args.db_type = 'LMDB'
 
     # Parse the resize mode
     args.vf_setting = []
