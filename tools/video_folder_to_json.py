@@ -33,7 +33,7 @@ if "__main__" == __name__:
         clazz_num = classes.index(clazz_name)
 
         for f in clazz.iterdir():
-            if f.suffix in video_ext:
+            if f.suffix.lower() in video_ext:
                 annotations.append({
                     "path": str(f),
                     "class_name": clazz_name,
