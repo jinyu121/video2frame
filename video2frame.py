@@ -3,6 +3,7 @@ import json
 import shutil
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from concurrent import futures
 from pathlib import Path
 from random import shuffle
 
@@ -178,9 +179,8 @@ def sample_frames(args, frames):
     return frames
 
 
-def process(args, video_ith, video_info, frame_db, pbar=None):
+def process(args, video_ith, video_info, frame_db):
     video_file = Path(video_info['path'])
-    tqdm.write(str(video_file))
     tmp_dir = Path(args.tmp_dir) / video_file.name
     tmp_dir.mkdir(exist_ok=True)
 
@@ -203,8 +203,7 @@ def process(args, video_ith, video_info, frame_db, pbar=None):
     if not args.not_remove:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    if pbar:
-        pbar.update()
+    return str(video_file)
 
 
 if "__main__" == __name__:
@@ -215,16 +214,22 @@ if "__main__" == __name__:
 
     annotations = json.load(Path(args.annotation_file).open())
 
-    executor = ThreadPoolExecutor(max_workers=args.threads) if args.threads > 0 else None
-    with tqdm(total=len(annotations)) as pbar:
+    if args.threads > 0:
+        executor = futures.ThreadPoolExecutor(max_workers=args.threads) if args.threads > 0 else None
+        to_do_map = []
         for ith, video_info in enumerate(annotations):
-            if args.threads > 0:
-                executor.submit(process, args, ith, video_info, frame_db, pbar)
-            else:
-                process(args, ith, video_info, frame_db, pbar)
+            future = executor.submit(process, args, ith, video_info, frame_db)
+            to_do_map.append(future)
 
-    if executor:
-        executor.shutdown()
+        done_iter = futures.as_completed(to_do_map)
+        for video_file in tqdm(done_iter, total = len(annotations)):
+            tqdm.write(video_file.result()+' done')
+
+        if executor:
+            executor.shutdown()
+    else:
+        for ith, video_info in enumerate(tqdm(annotations)):
+            tqdm.write(process(args, ith, video_info, frame_db)+' done')
 
     frame_db.close()
     print("Done")
