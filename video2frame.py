@@ -32,7 +32,7 @@ class LMDBStorage(Storage):
 
     def put(self, k, v):
         with self.database.begin(write=True, buffers=True) as txn:
-            txn.put(k, v)
+            txn.put(k.encode(), v)
 
 
 class HDF5Storage(Storage):
@@ -41,7 +41,7 @@ class HDF5Storage(Storage):
         self.database = h5py.File(path, 'w')
 
     def put(self, k, v):
-        self.database[k] = v
+        self.database[k] = np.void(v)
 
 
 def parse_args():
@@ -196,13 +196,10 @@ def process(args, video_ith, video_info, frame_db):
     if not files:
         raise RuntimeError("No frames in video")
 
-    try:
-        for frame_ith, (frame_id, frame_path) in enumerate(files):
-            key = "{:08d}/{:08d}".format(video_ith, frame_ith)
-            s = (tmp_dir / frame_path).open("rb").read()
-            frame_db.put(key, s if args.db_type == 'LMDB' else np.void(s))
-    except:
-        raise RuntimeError("Video exists in database")
+    for frame_ith, (frame_id, frame_path) in enumerate(files):
+        key = "{:08d}/{:08d}".format(video_ith, frame_ith)
+        s = (tmp_dir / frame_path).open("rb").read()
+        frame_db.put(key, s)
 
     if not args.not_remove:
         shutil.rmtree(tmp_dir, ignore_errors=True)
