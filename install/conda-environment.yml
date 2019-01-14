@@ -1,4 +1,4 @@
-name: vid2frame
+name: video2frame
 dependencies:
   - python
   - tqdm
