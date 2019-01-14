@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import shutil
 import subprocess
 from concurrent import futures
@@ -132,6 +133,10 @@ def modify_args(args):
         args.vf_setting.extend([
             "-r", "{}".format(args.fps)
         ])
+
+    if args.threads:
+        if args.threads < 0:
+            args.threads = max(os.cpu_count() / 2, 1)
 
     return args
 
