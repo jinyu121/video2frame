@@ -40,28 +40,28 @@ class HDF5VideoDataset(Dataset):
             frame_index = list(range(len(frames_binary)))
 
         # Decode the frames
-        video_data = [
-            np.asarray(
-                Image.open(
-                    BytesIO(
-                        np.asarray(
-                            frames_binary["{:08d}".format(i)]
-                        ).tostring()
-                    )
+        frames = [
+            Image.open(
+                BytesIO(
+                    np.asarray(
+                        frames_binary["{:08d}".format(i)]
+                    ).tostring()
                 )
             ) for i in frame_index
         ]
-        video_data = np.array(video_data).transpose([3, 0, 1, 2])
 
         # Crop the videos
         if self.crop_size:
-            _, _, h, w = video_data.shape
+            w, h = frames[0].size
             y1 = randint(0, h - self.crop_size - 1)
             x1 = randint(0, w - self.crop_size - 1)
             y2, x2 = y1 + self.crop_size, x1 + self.crop_size
-            video_data = video_data[:, :, y1:y2, x1:x2]
+            frames = [im.crop((x1, y1, x2, y2)) for im in frames]
 
-        return video_data, annotation['class']
+        # To video blob
+        frames = np.array([np.asarray(x) for x in frames]).transpose([3, 0, 1, 2])
+
+        return frames, annotation['class']
 
     def __len__(self):
         return len(self.videos)

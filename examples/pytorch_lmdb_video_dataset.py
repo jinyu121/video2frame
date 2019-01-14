@@ -24,26 +24,27 @@ class LMDBVideoDataset(Dataset):
     def __getitem__(self, index):
         annotation = self.annotation[index]
 
+        # Decode the frames
         frames = [
-            np.asarray(
-                Image.open(
-                    BytesIO(
-                        self.database.get(
-                            "{:08d}/{:08d}".format(index, i).encode()
-                        )
+            Image.open(
+                BytesIO(
+                    self.database.get(
+                        "{:08d}/{:08d}".format(index, i).encode()
                     )
                 )
             ) for i in range(self.num_frames_per_clip)
         ]
-        video_data = np.array(frames).transpose([3, 0, 1, 2])
 
         # Crop the videos
         if self.crop_size:
-            _, _, h, w = video_data.shape
+            w, h = frames[0].size
             y1 = randint(0, h - self.crop_size - 1)
             x1 = randint(0, w - self.crop_size - 1)
             y2, x2 = y1 + self.crop_size, x1 + self.crop_size
-            video_data = video_data[:, :, y1:y2, x1:x2]
+            frames = [im.crop((x1, y1, x2, y2)) for im in frames]
+
+        # To video blob
+        video_data = np.array([np.asarray(x) for x in frames]).transpose([3, 0, 1, 2])
 
         return video_data, annotation['class']
 
