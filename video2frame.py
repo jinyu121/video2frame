@@ -2,7 +2,6 @@ import argparse
 import json
 import shutil
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
 from concurrent import futures
 from pathlib import Path
 from random import shuffle
@@ -184,26 +183,26 @@ def process(args, video_ith, video_info, frame_db):
     tmp_dir = Path(args.tmp_dir) / video_file.name
     tmp_dir.mkdir(exist_ok=True)
 
+    frames = video_to_frames(args, video_file, tmp_dir)
+    if not frames:
+        raise RuntimeError("Extract frame failed")
+
+    files = sample_frames(args, frames)
+    if not files:
+        raise RuntimeError("No frames in video")
+
     try:
-        frames = video_to_frames(args, video_file, tmp_dir)
-        if not frames:
-            raise RuntimeError("Extract frame failed".format(video_file))
-
-        files = sample_frames(args, frames)
-        if not files:
-            raise RuntimeError("No frames in video {}".format(video_file))
-
         for frame_ith, (frame_id, frame_path) in enumerate(files):
             key = "{:08d}/{:08d}".format(video_ith, frame_ith)
             s = (tmp_dir / frame_path).open("rb").read()
             frame_db.put(key, s if args.db_type == 'LMDB' else np.void(s))
-    except Exception as e:
-        tqdm.write("When writing [{}] to database, error occurs:{}".format(video_file, e))
+    except:
+        raise RuntimeError("Video exists in database")
 
     if not args.not_remove:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    return str(video_file)
+    return "OK"
 
 
 if "__main__" == __name__:
@@ -215,21 +214,28 @@ if "__main__" == __name__:
     annotations = json.load(Path(args.annotation_file).open())
 
     if args.threads > 0:
-        executor = futures.ThreadPoolExecutor(max_workers=args.threads) if args.threads > 0 else None
-        to_do_map = []
-        for ith, video_info in enumerate(annotations):
-            future = executor.submit(process, args, ith, video_info, frame_db)
-            to_do_map.append(future)
-
-        done_iter = futures.as_completed(to_do_map)
-        for video_file in tqdm(done_iter, total = len(annotations)):
-            tqdm.write(video_file.result()+' done')
-
-        if executor:
-            executor.shutdown()
+        with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+            jobs = {
+                executor.submit(process, args, ith, video_info, frame_db): video_info['path']
+                for ith, video_info in enumerate(annotations)
+            }
+            for future in tqdm(futures.as_completed(jobs), total=len(annotations)):
+                video_file = jobs[future]
+                try:
+                    video_status = future.result()
+                except Exception as e:
+                    tqdm.write("{} : {}".format(video_file, e))
+                else:
+                    tqdm.write("{} : {}".format(video_file, video_status))
     else:
         for ith, video_info in enumerate(tqdm(annotations)):
-            tqdm.write(process(args, ith, video_info, frame_db)+' done')
+            video_file = video_info['path']
+            try:
+                video_status = process(args, ith, video_info, frame_db)
+            except Exception as e:
+                tqdm.write("{} : {}".format(video_file, e))
+            else:
+                tqdm.write("{} : {}".format(video_file, video_status))
 
     frame_db.close()
     print("Done")
