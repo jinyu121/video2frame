@@ -11,6 +11,8 @@ from tqdm import tqdm, trange
 
 class HDF5VideoDataset(Dataset):
     def __init__(self, annotation_file, database_file, num_frames_per_clip=0, crop_size=0):
+        super().__init__()
+
         self.num_frames_per_clip = num_frames_per_clip
         assert self.num_frames_per_clip >= 0
         self.crop_size = crop_size
