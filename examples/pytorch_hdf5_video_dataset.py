@@ -4,7 +4,7 @@ from random import randint
 
 import h5py
 import numpy as np
-from scipy import misc
+from PIL import Image
 from torch.utils.data import Dataset
 from tqdm import tqdm, trange
 
@@ -41,13 +41,15 @@ class HDF5VideoDataset(Dataset):
 
         # Decode the frames
         video_data = [
-            misc.imread(
-                BytesIO(
-                    np.asarray(
-                        frames_binary["{:08d}".format(fi)]
-                    ).tostring()
+            np.asarray(
+                Image.open(
+                    BytesIO(
+                        np.asarray(
+                            frames_binary["{:08d}".format(i)]
+                        ).tostring()
+                    )
                 )
-            ) for fi in frame_index
+            ) for i in frame_index
         ]
         video_data = np.array(video_data).transpose([3, 0, 1, 2])
 
