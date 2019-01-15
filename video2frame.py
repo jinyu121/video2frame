@@ -44,13 +44,32 @@ class HDF5Storage(Storage):
         self.database[k] = np.void(v)
 
 
+class FileStorage(Storage):
+    def __init__(self, path):
+        super().__init__()
+        self.base_path = Path(path)
+
+    def put(self, k, v):
+        path_without_ext = self.base_path / k
+        path_without_ext.parent.mkdir(parents=True, exist_ok=True)
+        with Path(str(path_without_ext) + ".jpg").open("wb") as f:
+            f.write(v)
+
+
+STORAGE_TYPES = {
+    "HDF5": HDF5Storage,
+    "LMDB": LMDBStorage,
+    "FILE": FileStorage
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
     # Names and folders
     parser.add_argument("annotation_file", type=str, help="The annotation file, in json format")
     parser.add_argument("--db_name", type=str, help="The database to store extracted frames")
-    parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5"], default="HDF5",
+    parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5", "FILE"], default="HDF5",
                         help="Type of the database, LMDB or HDF5")
     parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Tmp dir")
 
@@ -106,8 +125,6 @@ def modify_args(args):
             args.db_name += ".hdf5"
         elif args.db_type == 'LMDB':
             args.db_name += ".lmdb"
-        else:
-            raise Exception('Unknown db_type')
 
     # Range check
     args.clips = max(args.clips, 1)
@@ -262,7 +279,7 @@ if "__main__" == __name__:
     args = parse_args()
     Path(args.tmp_dir).mkdir(exist_ok=True)
 
-    frame_db = LMDBStorage(args.db_name) if args.db_type == 'LMDB' else HDF5Storage(args.db_name)
+    frame_db = STORAGE_TYPES[args.db_type](args.db_name)
 
     annotations = json.load(Path(args.annotation_file).open())
 
