@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from random import shuffle
+from random import shuffle, random
 
 import h5py
 import lmdb
@@ -54,6 +54,10 @@ def parse_args():
                         help="Type of the database, LMDB or HDF5")
     parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Tmp dir")
 
+    # Clips
+    parser.add_argument("--duration", type=float, default=-1, help="Length of the clip")
+    parser.add_argument("--clips", type=int, default=1, help="Num of clips per video")
+
     # Resize mode
     parser.add_argument("--resize_mode", type=int, default=0, choices=[0, 1, 2],
                         help="Resize mode\n"
@@ -75,8 +79,8 @@ def parse_args():
     parser.add_argument("--sample", type=str, help="Parameter of sample mode")
 
     # performance
-    parser.add_argument("-t", "--threads", type=int, default=0, help="Number of threads")
-    parser.add_argument("-nrm", "--not_remove", action="store_true", help="Do not delete tmp files at last")
+    parser.add_argument("--threads", type=int, default=0, help="Number of threads")
+    parser.add_argument("--not_remove", action="store_true", help="Do not delete tmp files at last")
 
     args = parser.parse_args()
     args = EasyDict(args.__dict__)
@@ -104,6 +108,10 @@ def modify_args(args):
             args.db_name += ".lmdb"
         else:
             raise Exception('Unknown db_type')
+
+    # Range check
+    args.clips = max(args.clips, 1)
+    args.duration = max(args.duration, 0)
 
     # Parse the resize mode
     args.vf_setting = []
@@ -141,13 +149,46 @@ def modify_args(args):
     return args
 
 
-def video_to_frames(args, video_file, tmp_dir):
+def get_video_meta(video_file):
+    try:
+        cmd = [
+            "ffprobe",
+            "-v", "quiet",
+            "-show_streams",
+            "-print_format", "json",
+            video_file
+        ]
+        output = subprocess.check_output(cmd)
+        output = json.loads(output)
+
+        streamsbytype = {}
+        for stream in output["stream"]:
+            streamsbytype[stream["codec_type"].lower()] = stream
+
+        return streamsbytype
+    except:
+        return {}
+
+
+def video_to_frames(args, video_file, video_meta, tmp_dir):
+    # Random clip the video
+    clip_setting = []
+    if args.duration > 0:
+        video_duration = float(video_meta["video"]["duration"])
+        sta = max(0., random() * (video_duration - args.duration))
+        dur = min(args.duration, video_duration - sta)
+        clip_setting.extend([
+            "-ss", "{}".format(sta),
+            "-t", "{}".format(dur)
+        ])
+
     cmd = [
         "ffmpeg",
         "-loglevel", "panic",
         "-vsync", "vfr",
         "-i", str(video_file),
         *args.vf_setting,
+        *clip_setting,
         "-qscale:v", "2",
         str(tmp_dir / "%8d.jpg")
     ]
@@ -183,26 +224,36 @@ def sample_frames(args, frames):
     return frames
 
 
-def process(args, video_ith, video_info, frame_db):
+def process(args, video_key, video_info, frame_db):
     video_file = Path(video_info['path'])
-    tmp_dir = Path(args.tmp_dir) / video_file.name
-    tmp_dir.mkdir(exist_ok=True)
+    video_tmp_dir = Path(args.tmp_dir) / "{}".format(video_key)
+    video_tmp_dir.mkdir(exist_ok=True)
 
-    frames = video_to_frames(args, video_file, tmp_dir)
-    if not frames:
-        raise RuntimeError("Extract frame failed")
+    video_meta = get_video_meta(video_file)
+    if not video_meta:
+        raise RuntimeError("Can not get video info")
 
-    files = sample_frames(args, frames)
-    if not files:
-        raise RuntimeError("No frames in video")
+    for ith_clip in range(args.clips):
+        clip_tmp_dir = video_tmp_dir / "{:03d}".format(ith_clip)
 
-    for frame_ith, (frame_id, frame_path) in enumerate(files):
-        key = "{:08d}/{:08d}".format(video_ith, frame_ith)
-        s = (tmp_dir / frame_path).open("rb").read()
-        frame_db.put(key, s)
+        frames = video_to_frames(args, video_file, video_meta, clip_tmp_dir)
+        if not frames:
+            raise RuntimeError("Extract frame failed")
+
+        files = sample_frames(args, frames)
+        if not files:
+            raise RuntimeError("No frames in video")
+
+        for ith_frame, (frame_id, frame_path) in enumerate(files):
+            key = "{}/{:03d}/{:08d}".format(video_key, ith_clip, ith_frame)
+            s = (clip_tmp_dir / frame_path).open("rb").read()
+            frame_db.put(key, s)
+
+        if not args.not_remove:
+            shutil.rmtree(clip_tmp_dir, ignore_errors=True)
 
     if not args.not_remove:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(video_tmp_dir, ignore_errors=True)
 
     return "OK"
 
@@ -218,26 +269,24 @@ if "__main__" == __name__:
     if args.threads > 0:
         with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
             jobs = {
-                executor.submit(process, args, ith, video_info, frame_db): video_info['path']
-                for ith, video_info in enumerate(annotations)
+                executor.submit(process, args, video_key, video_info, frame_db): video_info['path']
+                for video_key, video_info in annotations.items()
             }
             for future in tqdm(futures.as_completed(jobs), total=len(annotations)):
-                video_file = jobs[future]
                 try:
                     video_status = future.result()
                 except Exception as e:
-                    tqdm.write("{} : {}".format(video_file, e))
+                    tqdm.write("{} : {}".format(jobs[future], e))
                 else:
-                    tqdm.write("{} : {}".format(video_file, video_status))
+                    tqdm.write("{} : {}".format(jobs[future], video_status))
     else:
         for ith, video_info in enumerate(tqdm(annotations)):
-            video_file = video_info['path']
             try:
                 video_status = process(args, ith, video_info, frame_db)
             except Exception as e:
-                tqdm.write("{} : {}".format(video_file, e))
+                tqdm.write("{} : {}".format(video_info['path'], e))
             else:
-                tqdm.write("{} : {}".format(video_file, video_status))
+                tqdm.write("{} : {}".format(video_info['path'], video_status))
 
     frame_db.close()
     print("Done")

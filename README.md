@@ -69,6 +69,18 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
         ```sh
         python video2frame.py dataset.json --db_name my_dataset.lmdb
         ```
+        
+    + Random clip 5 seconds:
+    
+        ```sh
+        python video2frame.py dataset.json --duration 5.0
+        ```
+        
+    + Get 3 video clips with a length of 5 seconds:
+    
+        ```sh
+        python video2frame.py dataset.json --clips 3 --duration 5.0 
+        ```
     
     + Resize the frames to 320x240:
         
@@ -109,7 +121,7 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     + Use 16 threads to speed-up:
     
         ```sh
-        python video2frame.py dataset.json -t 16
+        python video2frame.py dataset.json --threads 16
         ```
     
     + Resize the frames to 320x240, extract one frame every two seconds, uniformly sample 32 frames per video, and using 20 threads:
@@ -128,10 +140,10 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     
     ```text
     usage: video2frame.py [-h] [--db_name DB_NAME] [--db_type {LMDB,HDF5}]
-                          [--tmp_dir TMP_DIR] [--resize_mode {0,1,2}]
-                          [--resize RESIZE] [--fps FPS] [--sample_mode {0,1,2,3}]
-                          [--sample SAMPLE] [-t THREADS] [-nrm]
-                          annotation_file
+                          [--tmp_dir TMP_DIR] [--clips CLIPS] [--duration DURATION] 
+                          [--resize_mode {0,1,2}] [--resize RESIZE] [--fps FPS] 
+                          [--sample_mode {0,1,2,3}] [--sample SAMPLE] 
+                          [--threads THREADS] [--not_remove] annotation_file
     
     positional arguments:
       annotation_file       The annotation file, in json format
@@ -141,6 +153,8 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
       --db_name DB_NAME     The database to store extracted frames
       --db_type {LMDB,HDF5} Type of the database, LMDB or HDF5
       --tmp_dir TMP_DIR     Tmp dir
+      --clips CLIPS         Num of clips per video
+      --duration DURATION   Length of the clip
       --resize_mode {0,1,2} Resize mode
                               0: Do not resize
                               1: 800x600: Resize to W*H
@@ -154,9 +168,8 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
                               2: Randomly sample n frames
                               3: Mod mode
       --sample SAMPLE       Parameter of sample mode
-      -t THREADS, --threads THREADS
-                            Number of threads
-      -nrm, --not_remove    Do not delete tmp files at last
+      --threads THREADS     Number of threads
+      --not_remove          Do not delete tmp files at last
     ```
     
 ## Tools
