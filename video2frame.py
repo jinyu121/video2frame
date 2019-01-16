@@ -152,9 +152,9 @@ def modify_args(args):
 
     if not args.error_list:
         if args.annotation_file.lower().endswith(".json"):
-            args.db_name = args.annotation_file[:-5]
+            args.error_list = args.annotation_file[:-5]
         else:
-            args.db_name = args.annotation_file
+            args.error_list = args.annotation_file
         args.error_list += "-error.txt"
 
     # Range check
@@ -355,5 +355,11 @@ if "__main__" == __name__:
             for x in fails:
                 print(x)
                 f.write(x + "\n")
+        annotation_ok = {k: v for k, v in annotations.items() if v['path'] not in fails}
+        if args.annotation_file.lower().endswith(".json"):
+            save_path = args.annotation_file[:-5] + "-fix.json"
+        else:
+            save_path = args.annotation_file + "-fix.json"
+        json.dump(annotation_ok, Path(save_path).open("w"))
 
     print("All Done!")
