@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument("annotation_file", type=str, help="The annotation file, in json format")
     parser.add_argument("--db_name", type=str, help="The database to store extracted frames")
     parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5", "FILE", "PKL"], default="HDF5",
-                        help="Type of the database, LMDB or HDF5")
+                        help="Type of the database")
     parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Tmp dir")
     parser.add_argument("--error_list", type=str, default="", help="Error list file")
 

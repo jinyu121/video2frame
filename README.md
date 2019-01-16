@@ -141,11 +141,13 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     #### All parameters
     
     ```text
-    usage: video2frame.py [-h] [--db_name DB_NAME] [--db_type {LMDB,HDF5}]
-                          [--tmp_dir TMP_DIR] [--clips CLIPS] [--duration DURATION] 
-                          [--resize_mode {0,1,2}] [--resize RESIZE] [--fps FPS] 
-                          [--sample_mode {0,1,2,3}] [--sample SAMPLE] 
-                          [--threads THREADS] [--not_remove] annotation_file
+    usage: video2frame.py [-h] [--db_name DB_NAME]
+                          [--db_type {LMDB,HDF5,FILE,PKL}] [--tmp_dir TMP_DIR]
+                          [--error_list ERROR_LIST] [--duration DURATION]
+                          [--clips CLIPS] [--resize_mode {0,1,2}]
+                          [--resize RESIZE] [--fps FPS] [--sample_mode {0,1,2,3}]
+                          [--sample SAMPLE] [--threads THREADS] [--keep]
+                          annotation_file
     
     positional arguments:
       annotation_file       The annotation file, in json format
@@ -153,11 +155,15 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     optional arguments:
       -h, --help            show this help message and exit
       --db_name DB_NAME     The database to store extracted frames
-      --db_type {LMDB,HDF5} Type of the database, LMDB or HDF5
+      --db_type {LMDB,HDF5,FILE,PKL}
+                            Type of the database
       --tmp_dir TMP_DIR     Tmp dir
-      --clips CLIPS         Num of clips per video
+      --error_list ERROR_LIST
+                            Error list file
       --duration DURATION   Length of the clip
-      --resize_mode {0,1,2} Resize mode
+      --clips CLIPS         Num of clips per video
+      --resize_mode {0,1,2}
+                            Resize mode
                               0: Do not resize
                               1: 800x600: Resize to W*H
                               2: L600 or S600: keep the aspect ration and scale the longer/shorter side to s
@@ -201,14 +207,22 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
 
 1. `pytorch_skvideo_dataset.py`
 
-    Get frames using `skvideo` package, when training and evaluating.
+    Get frames using `skvideo` package, when training and evaluating. It is OKay when your batch size is small, and your cpus are powerful enough.
+
+1. `pytorch_lmdb_video_dataset.py`
+
+    A PyTorch `Dataset` example to read LMDB dataset.
 
 1. `pytorch_hdf5_video_dataset.py`
 
-    A PyTorch `Dataset` example, as well as an HDF5 database checker.
+    A PyTorch `Dataset` example to read HDF5 dataset.
     
     __ALWAYS ENSURE `num_workers=0` OR `num_workers=1` OF YOUR DATA LOADER.__
-    
-1. `pytorch_lmdb_video_dataset.py`
 
-    A PyTorch `Dataset` example, as well as a LMDB database checker.
+1. `pytorch_pkl_video_dataset.py`
+
+    A PyTorch `Dataset` example to read pickle dataset.
+    
+1. `pytorch_file_video_dataset.py`
+
+    A PyTorch `Dataset` example to read image files dataset.
