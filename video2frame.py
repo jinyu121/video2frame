@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import pickle
 import shutil
 import subprocess
 from concurrent import futures
@@ -18,7 +19,7 @@ class Storage:
     def __init__(self):
         self.database = None
 
-    def put(self, k, v):
+    def put(self, video_key, ith_clip, clip_tmp_dir, frame_files):
         raise NotImplementedError()
 
     def close(self):
@@ -30,9 +31,12 @@ class LMDBStorage(Storage):
         super().__init__()
         self.database = lmdb.open(path, map_size=1 << 40)
 
-    def put(self, k, v):
-        with self.database.begin(write=True, buffers=True) as txn:
-            txn.put(k.encode(), v)
+    def put(self, video_key, ith_clip, clip_tmp_dir, frame_files):
+        for ith_frame, (frame_id, frame_path) in enumerate(frame_files):
+            data = (clip_tmp_dir / frame_path).open("rb").read()
+            key = "{}/{:03d}/{:08d}".format(video_key, ith_clip, ith_frame)
+            with self.database.begin(write=True, buffers=True) as txn:
+                txn.put(key.encode(), data)
 
 
 class HDF5Storage(Storage):
@@ -40,8 +44,26 @@ class HDF5Storage(Storage):
         super().__init__()
         self.database = h5py.File(path, 'w')
 
-    def put(self, k, v):
-        self.database[k] = np.void(v)
+    def put(self, video_key, ith_clip, clip_tmp_dir, frame_files):
+        for ith_frame, (frame_id, frame_path) in enumerate(frame_files):
+            data = (clip_tmp_dir / frame_path).open("rb").read()
+            key = "{}/{:03d}/{:08d}".format(video_key, ith_clip, ith_frame)
+            self.database[key] = np.void(data)
+
+
+class PKLStorage(Storage):
+    def __init__(self, path):
+        super().__init__()
+        self.base_path = Path(path)
+
+    def put(self, video_key, ith_clip, clip_tmp_dir, frame_files):
+        save_dir = self.base_path / video_key
+        save_dir.mkdir(exist_ok=True, parents=True)
+        frame_data = []
+        for ith_frame, (frame_id, frame_path) in enumerate(frame_files):
+            data = (clip_tmp_dir / frame_path).open("rb").read()
+            frame_data.append(data)
+        pickle.dump(frame_data, (save_dir / "{:03d}.pkl".format(ith_clip)).open("wb"))
 
 
 class FileStorage(Storage):
@@ -49,17 +71,19 @@ class FileStorage(Storage):
         super().__init__()
         self.base_path = Path(path)
 
-    def put(self, k, v):
-        path_without_ext = self.base_path / k
-        path_without_ext.parent.mkdir(parents=True, exist_ok=True)
-        with Path(str(path_without_ext) + ".jpg").open("wb") as f:
-            f.write(v)
+    def put(self, video_key, ith_clip, clip_tmp_dir, frame_files):
+        save_dir = self.base_path / video_key / "{:03d}".format(ith_clip)
+        save_dir.mkdir(exist_ok=True, parents=True)
+        for ith_frame, (frame_id, frame_path) in enumerate(frame_files):
+            data = (clip_tmp_dir / frame_path).open("rb").read()
+            (save_dir / "{:08d}.jpg".format(ith_frame)).open("wb").write(data)
 
 
 STORAGE_TYPES = {
     "HDF5": HDF5Storage,
     "LMDB": LMDBStorage,
-    "FILE": FileStorage
+    "FILE": FileStorage,
+    "PKL": PKLStorage
 }
 
 
@@ -69,7 +93,7 @@ def parse_args():
     # Names and folders
     parser.add_argument("annotation_file", type=str, help="The annotation file, in json format")
     parser.add_argument("--db_name", type=str, help="The database to store extracted frames")
-    parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5", "FILE"], default="HDF5",
+    parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5", "FILE", "PKL"], default="HDF5",
                         help="Type of the database, LMDB or HDF5")
     parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Tmp dir")
 
@@ -257,14 +281,12 @@ def process(args, video_key, video_info, frame_db):
         if not frames:
             raise RuntimeError("Extract frame failed")
 
-        files = sample_frames(args, frames)
-        if not files:
+        frames = sample_frames(args, frames)
+        if not frames:
             raise RuntimeError("No frames in video")
 
-        for ith_frame, (frame_id, frame_path) in enumerate(files):
-            key = "{}/{:03d}/{:08d}".format(video_key, ith_clip, ith_frame)
-            s = (clip_tmp_dir / frame_path).open("rb").read()
-            frame_db.put(key, s)
+        # Save to database
+        frame_db.put(video_key, ith_clip, clip_tmp_dir, frames)
 
         if not args.not_remove:
             shutil.rmtree(clip_tmp_dir, ignore_errors=True)
