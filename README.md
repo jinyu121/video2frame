@@ -36,10 +36,12 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     ```json
     {
         "label1": {
-            "path": "path/to/the/video/file_1.mp4"
+            "path": "path/to/the/video/file_1.mp4",
+            "class": 1
         },
         "label2": {
-            "path": "path/to/the/video/file_2.mp4"
+            "path": "path/to/the/video/file_2.mp4",
+            "class": 2
         }
     }
     ```
@@ -189,25 +191,24 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     ``` 
 1. `something_to_json.py`
     
-    A json generator that converts the Something-Something dataset.
-    
+    A json generator that converts the `Something-Something` dataset.
+
+1. `ucf101_to_json.py`
+
+    A json generator that converts the `UCF101` dataset.
+
 ## Examples
+
+1. `pytorch_skvideo_dataset.py`
+
+    Get frames using `skvideo` package, when training and evaluating.
 
 1. `pytorch_hdf5_video_dataset.py`
 
     A PyTorch `Dataset` example, as well as an HDF5 database checker.
     
-    The json file should like:
+    __ALWAYS ENSURE `num_workers=0` OR `num_workers=1` OF YOUR DATA LOADER.__
     
-    ```json
-    {
-        "random_key_1": {
-            "path": "path/to/the/video/file_1.mp4",
-            "class": 1
-        },
-        "random_key_2": {
-            "path": "path/to/the/video/file_2.mp4",
-            "class": 2
-        }
-    }
-    ```
+1. `pytorch_lmdb_video_dataset.py`
+
+    A PyTorch `Dataset` example, as well as a LMDB database checker.
