@@ -10,29 +10,35 @@ from tqdm import tqdm, trange
 
 
 class LMDBVideoDataset(Dataset):
-    def __init__(self, annotation_file, database_file, num_frames_per_clip, crop_size=0):
+    def __init__(self, annotation, database, clips=1, frames=16, crop=0):
         super().__init__()
 
-        self.num_frames_per_clip = num_frames_per_clip
+        self.num_clips = clips
+        assert self.num_clips > 0
+        self.num_frames_per_clip = frames
         assert self.num_frames_per_clip >= 0
-        self.crop_size = crop_size
+        self.crop_size = crop
         assert self.crop_size >= 0
 
-        self.annotation = json.load(open(annotation_file, "r"))
-        self.database = lmdb.open(database_file, readonly=True).begin().cursor()
+        self.annotation = json.load(open(annotation, "r"))
+        self.database = lmdb.open(database, readonly=True).begin().cursor()
+        self.videos = sorted([x for x in self.annotation.keys()])
 
     def __getitem__(self, index):
-        annotation = self.annotation[index]
+        video_id = self.videos[index]
+        video_clip_choice = "{}/{:03d}".format(video_id, randint(0, self.num_clips - 1))
+
+        annotation = self.annotation[video_id]
 
         # Decode the frames
         frames = [
             Image.open(
                 BytesIO(
                     self.database.get(
-                        "{:08d}/{:08d}".format(index, i).encode()
+                        "{}/{:08d}".format(video_clip_choice, ith_frame).encode()
                     )
                 )
-            ) for i in range(self.num_frames_per_clip)
+            ) for ith_frame in range(self.num_frames_per_clip)
         ]
 
         # Crop the videos
@@ -44,7 +50,7 @@ class LMDBVideoDataset(Dataset):
             frames = [im.crop((x1, y1, x2, y2)) for im in frames]
 
         # To video blob
-        video_data = np.array([np.asarray(x) for x in frames]).transpose([3, 0, 1, 2])
+        video_data = np.array([np.asarray(x) for x in frames]).transpose([3, 0, 1, 2]).astype(np.float32) / 255.
 
         return video_data, annotation['class']
 
@@ -52,9 +58,8 @@ class LMDBVideoDataset(Dataset):
         return len(self.annotation)
 
     def __repr__(self):
-        return "{} {} videos, {}, {}".format(
-            type(self), len(self),
-            "{} frames per video".format(self.num_frames_per_clip),
+        return "{} {} videos, {} clips per video, {} frames per clip, {}".format(
+            type(self), len(self), self.num_clips, self.num_frames_per_clip,
             "Crop to {}".format(self.crop_size) if self.crop_size else "Not cropped")
 
 
@@ -63,12 +68,13 @@ if "__main__" == __name__:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("annotation", type=str, help="The annotation file, in json format")
-    parser.add_argument("data", type=str, help="The hdf5 file")
+    parser.add_argument("database", type=str, help="The hdf5 file")
+    parser.add_argument("--clips", type=int, default=1, help="Num of video clips")
     parser.add_argument("--frames", type=int, default=16, help="Num of frames per clip")
     parser.add_argument("--crop", type=int, default=160, help="Crop size")
     args = parser.parse_args()
 
-    dataset = LMDBVideoDataset(args.annotation, args.data, args.frames, args.crop)
+    dataset = LMDBVideoDataset(args.annotation, args.database, args.clips, args.frames, args.crop)
     error_index = []
     for i in trange(len(dataset)):
         try:
