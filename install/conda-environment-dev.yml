@@ -1,0 +1,17 @@
+name: video2frame-dev
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python
+  - tqdm
+  - numpy
+  - lmdb
+  - python-lmdb
+  - scikit-image
+  - h5py
+  - pytorch
+  - pip:
+      - easydict
+      - scikit-video
