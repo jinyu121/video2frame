@@ -10,14 +10,13 @@ from tqdm import tqdm, trange
 
 
 class HDF5VideoDataset(Dataset):
-    def __init__(self, annotation, database, clips=1, frames=0, crop=0):
+    def __init__(self, annotation, database, clips=1, frames=0, transform=None):
         super().__init__()
 
         self.num_clips = clips
         self.num_frames_per_clip = frames
         assert self.num_frames_per_clip >= 0
-        self.crop_size = crop
-        assert self.crop_size >= 0
+        self.transform = transform
 
         self.annotation = json.load(open(annotation, "r"))
         self.database = h5py.File(database, 'r')
@@ -52,27 +51,22 @@ class HDF5VideoDataset(Dataset):
             ) for ith_frame in frame_index
         ]
 
-        # Crop the videos
-        if self.crop_size:
-            w, h = frames[0].size
-            y1 = randint(0, h - self.crop_size - 1)
-            x1 = randint(0, w - self.crop_size - 1)
-            y2, x2 = y1 + self.crop_size, x1 + self.crop_size
-            frames = [im.crop((x1, y1, x2, y2)) for im in frames]
-
         # To video blob
-        frames = np.array([np.asarray(x) for x in frames]).transpose([3, 0, 1, 2]).astype(np.float32) / 255.
+        video_data = np.array([np.asarray(x) for x in frames])
 
-        return frames, annotation['class']
+        if self.transform:
+            video_data = self.transform(video_data)
+
+        return video_data, annotation['class']
 
     def __len__(self):
         return len(self.videos)
 
     def __repr__(self):
-        return "{} {} videos, {} clips per video, {}, {}".format(
+        return "{} {} videos, {} clips per video, {}".format(
             type(self), len(self), self.num_clips,
-            "Sample to {} frames".format(self.num_frames_per_clip) if self.num_frames_per_clip else "Not sampled",
-            "Crop to {}".format(self.crop_size) if self.crop_size else "Not cropped")
+            "Sample to {} frames".format(self.num_frames_per_clip) if self.num_frames_per_clip else "Not sampled"
+        )
 
 
 if "__main__" == __name__:
@@ -83,10 +77,10 @@ if "__main__" == __name__:
     parser.add_argument("database", type=str, help="The hdf5 file")
     parser.add_argument("--clips", type=int, default=1, help="Num of video clips")
     parser.add_argument("--frames", type=int, default=16, help="Num of frames per clip")
-    parser.add_argument("--crop", type=int, default=160, help="Crop size")
     args = parser.parse_args()
 
-    dataset = HDF5VideoDataset(args.annotation, args.database, args.clips, args.frames, args.crop)
+    dataset = HDF5VideoDataset(
+        annotation=args.annotation, database=args.database, clips=args.clips, frames=args.frames)
     error_index = []
     for i in trange(len(dataset)):
         try:

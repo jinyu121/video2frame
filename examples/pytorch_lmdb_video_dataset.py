@@ -10,15 +10,14 @@ from tqdm import tqdm, trange
 
 
 class LMDBVideoDataset(Dataset):
-    def __init__(self, annotation, database, clips=1, frames=16, crop=0):
+    def __init__(self, annotation, database, clips=1, frames=16, transform=None):
         super().__init__()
 
         self.num_clips = clips
         assert self.num_clips > 0
         self.num_frames_per_clip = frames
         assert self.num_frames_per_clip >= 0
-        self.crop_size = crop
-        assert self.crop_size >= 0
+        self.transform = transform
 
         self.annotation = json.load(open(annotation, "r"))
         self.database = lmdb.open(database, readonly=True).begin().cursor()
@@ -41,16 +40,11 @@ class LMDBVideoDataset(Dataset):
             ) for ith_frame in range(self.num_frames_per_clip)
         ]
 
-        # Crop the videos
-        if self.crop_size:
-            w, h = frames[0].size
-            y1 = randint(0, h - self.crop_size - 1)
-            x1 = randint(0, w - self.crop_size - 1)
-            y2, x2 = y1 + self.crop_size, x1 + self.crop_size
-            frames = [im.crop((x1, y1, x2, y2)) for im in frames]
-
         # To video blob
-        video_data = np.array([np.asarray(x) for x in frames]).transpose([3, 0, 1, 2]).astype(np.float32) / 255.
+        video_data = np.array([np.asarray(x) for x in frames])
+
+        if self.transform:
+            video_data = self.transform(video_data)
 
         return video_data, annotation['class']
 
@@ -58,9 +52,9 @@ class LMDBVideoDataset(Dataset):
         return len(self.annotation)
 
     def __repr__(self):
-        return "{} {} videos, {} clips per video, {} frames per clip, {}".format(
-            type(self), len(self), self.num_clips, self.num_frames_per_clip,
-            "Crop to {}".format(self.crop_size) if self.crop_size else "Not cropped")
+        return "{} {} videos, {} clips per video, {} frames per clip".format(
+            type(self), len(self), self.num_clips, self.num_frames_per_clip
+        )
 
 
 if "__main__" == __name__:
@@ -71,10 +65,10 @@ if "__main__" == __name__:
     parser.add_argument("database", type=str, help="The hdf5 file")
     parser.add_argument("--clips", type=int, default=1, help="Num of video clips")
     parser.add_argument("--frames", type=int, default=16, help="Num of frames per clip")
-    parser.add_argument("--crop", type=int, default=160, help="Crop size")
     args = parser.parse_args()
 
-    dataset = LMDBVideoDataset(args.annotation, args.database, args.clips, args.frames, args.crop)
+    dataset = LMDBVideoDataset(
+        annotation=args.annotation, database=args.database, clips=args.clips, frames=args.frames)
     error_index = []
     for i in trange(len(dataset)):
         try:
