@@ -1,3 +1,4 @@
+import hashlib
 import json
 from argparse import ArgumentParser
 from pathlib import Path
@@ -24,19 +25,21 @@ if "__main__" == __name__:
     annotations = [x.split()[0] for x in open(args.annotation_file)]
 
     # Prepare the annotations
-    output_annotations = []
+    output_annotations = {}
 
-    for record in tqdm(annotations):
-        clazz_name, *_ = record.split('/')
+    for video_path in tqdm(annotations):
+        clazz_name, *_ = video_path.split('/')
         clazz_num = classes.index(clazz_name)
 
-        output_annotations.append({
-            "path": str(video_folder / record),
+        key = hashlib.md5(video_path.encode()).hexdigest()[:8]
+
+        output_annotations[key] = {
+            "path": str(video_folder / video_path),
             "class_name": clazz_name,
             "class": clazz_num
-        })
+        }
 
-    json.dump(output_annotations, Path(args.output_file).open("w"))
+    json.dump(output_annotations, Path(args.output_file).open("w"), indent=4)
 
     print("{} classes, {} videos".format(len(classes), len(output_annotations)))
     print("Done")
