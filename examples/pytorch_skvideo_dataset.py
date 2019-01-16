@@ -7,12 +7,12 @@ from torch.utils.data import Dataset
 
 
 class SKVideoDataset(Dataset):
-    def __init__(self, annotation, num_frames, clip_duration=-1, resize="", crop=0, flip=0):
+    def __init__(self, annotation, frames, duration=-1, resize="", crop=0):
         self.annotation = json.load(open(annotation))
-        self.num_frames = num_frames
-        self.clip_duration = clip_duration
+        self.num_frames = frames
+        self.clip_duration = duration
         self.crop = crop
-        self.flip = flip
+        self.resize = resize
         self.base_parameter = {"-vframes": "{}".format(self.num_frames)}
         if resize:
             w, h, *_ = (int(x) for x in resize.split("x")[:2])
@@ -44,12 +44,18 @@ class SKVideoDataset(Dataset):
             x1 = randint(0, w - self.crop - 1)
             y2, x2 = y1 + self.crop, x1 + self.crop
             frames = frames[:, y1:y2, x1:x2, :]
-        if random() < self.flip:
-            frames = frames[:, :, ::-1, :]
 
         video_data = np.array(frames).transpose([3, 0, 1, 2]).astype(np.float32) / 255.
 
         return video_data, clazz
+
+    def __repr__(self):
+        return "{} {} videos, {}, {}, {}, {}".format(
+            type(self), len(self),
+            "Clip {} seconds per video".format(self.clip_duration) if self.clip_duration > 0 else "Not clipped",
+            "Sample to {} frames per clip".format(self.num_frames) if self.num_frames else "Not sampled",
+            "Resize to {}".format(self.resize) if self.resize else "Not resize",
+            "Crop to {}".format(self.crop) if self.crop else "Not cropped")
 
 
 if "__main__" == __name__:
