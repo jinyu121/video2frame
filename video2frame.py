@@ -5,6 +5,7 @@ import pickle
 import shutil
 import subprocess
 from concurrent import futures
+from functools import wraps
 from pathlib import Path
 from random import shuffle, random
 
@@ -13,6 +14,23 @@ import lmdb
 import numpy as np
 from easydict import EasyDict
 from tqdm import tqdm
+
+
+def retry(tries=5):
+    def deco_retry(f):
+        @wraps(f)
+        def f_retry(*args, **kwargs):
+            mtries = tries
+            while mtries > 1:
+                try:
+                    return f(*args, **kwargs)
+                except:
+                    mtries -= 1
+            return f(*args, **kwargs)
+
+        return f_retry  # true decorator
+
+    return deco_retry
 
 
 class Storage:
@@ -218,7 +236,8 @@ def get_video_meta(video_file):
         return {}
 
 
-def video_to_frames(args, video_file, video_meta, tmp_dir):
+@retry()
+def video_to_frames(args, video_file, video_meta, tmp_dir, error_when_empty=True):
     # Random clip the video
     clip_setting = []
     if args.duration > 0:
@@ -245,10 +264,14 @@ def video_to_frames(args, video_file, video_meta, tmp_dir):
     frames = [(int(f.name.split('.')[0]), f) for f in tmp_dir.iterdir()]
     frames.sort(key=lambda x: x[0])
 
+    if error_when_empty and not frames:
+        raise RuntimeError("Extract frame failed")
+
     return frames
 
 
-def sample_frames(args, frames):
+@retry()
+def sample_frames(args, frames, error_when_empty=True):
     if args.sample_mode:
         n = int(args.sample)
         assert n > 0, "N must >0, but get {}".format(n)
@@ -269,6 +292,10 @@ def sample_frames(args, frames):
             frames = frames[::n]
         else:
             raise AttributeError("Sample mode is not supported")
+
+    if error_when_empty and not frames:
+        raise RuntimeError("No frame selected")
+
     return frames
 
 
@@ -288,13 +315,11 @@ def process(args, video_key, video_info, frame_db):
         clip_tmp_dir = video_tmp_dir / "{:03d}".format(ith_clip)
         clip_tmp_dir.mkdir(exist_ok=True, parents=True)
 
+        # Get all frames
         frames = video_to_frames(args, video_file, video_meta, clip_tmp_dir)
-        if not frames:
-            raise RuntimeError("Extract frame failed")
 
+        # Sample frames
         frames = sample_frames(args, frames)
-        if not frames:
-            raise RuntimeError("No frame selected")
 
         # Save to database
         frame_db.put(video_key, ith_clip, clip_tmp_dir, frames)
