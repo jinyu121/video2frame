@@ -123,7 +123,7 @@ def parse_args():
 
     # performance
     parser.add_argument("--threads", type=int, default=0, help="Number of threads")
-    parser.add_argument("--not_remove", action="store_true", help="Do not delete tmp files at last")
+    parser.add_argument("--keep", action="store_true", help="Do not delete tmp files at last")
 
     args = parser.parse_args()
     args = EasyDict(args.__dict__)
@@ -288,10 +288,10 @@ def process(args, video_key, video_info, frame_db):
         # Save to database
         frame_db.put(video_key, ith_clip, clip_tmp_dir, frames)
 
-        if not args.not_remove:
+        if not args.keep:
             shutil.rmtree(clip_tmp_dir, ignore_errors=True)
 
-    if not args.not_remove:
+    if not args.keep:
         shutil.rmtree(video_tmp_dir, ignore_errors=True)
 
     return "OK"

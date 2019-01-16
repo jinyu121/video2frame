@@ -169,7 +169,7 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
                               3: Mod mode
       --sample SAMPLE       Parameter of sample mode
       --threads THREADS     Number of threads
-      --not_remove          Do not delete tmp files at last
+      --keep                Do not delete tmp files at last
     ```
     
 ## Tools
