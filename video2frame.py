@@ -96,6 +96,7 @@ def parse_args():
     parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5", "FILE", "PKL"], default="HDF5",
                         help="Type of the database, LMDB or HDF5")
     parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Tmp dir")
+    parser.add_argument("--error_list", type=str, default="", help="Error list file")
 
     # Clips
     parser.add_argument("--duration", type=float, default=-1, help="Length of the clip")
@@ -150,6 +151,13 @@ def modify_args(args):
         elif args.db_type == 'LMDB':
             args.db_name += ".lmdb"
 
+    if not args.error_list:
+        if args.annotation_file.lower().endswith(".json"):
+            args.db_name = args.annotation_file[:-5]
+        else:
+            args.db_name = args.annotation_file
+        args.error_list += "-error.txt"
+
     # Range check
     args.clips = max(args.clips, 1)
     args.duration = max(args.duration, 0)
@@ -197,13 +205,13 @@ def get_video_meta(video_file):
             "-v", "quiet",
             "-show_streams",
             "-print_format", "json",
-            video_file
+            str(video_file)
         ]
         output = subprocess.check_output(cmd)
         output = json.loads(output)
 
         streamsbytype = {}
-        for stream in output["stream"]:
+        for stream in output["streams"]:
             streamsbytype[stream["codec_type"].lower()] = stream
 
         return streamsbytype
@@ -270,12 +278,16 @@ def process(args, video_key, video_info, frame_db):
     video_tmp_dir = Path(args.tmp_dir) / "{}".format(video_key)
     video_tmp_dir.mkdir(exist_ok=True)
 
+    if not video_file.exists():
+        raise RuntimeError("Video not exists")
+
     video_meta = get_video_meta(video_file)
     if not video_meta:
         raise RuntimeError("Can not get video info")
 
     for ith_clip in range(args.clips):
         clip_tmp_dir = video_tmp_dir / "{:03d}".format(ith_clip)
+        clip_tmp_dir.mkdir(exist_ok=True, parents=True)
 
         frames = video_to_frames(args, video_file, video_meta, clip_tmp_dir)
         if not frames:
@@ -283,7 +295,7 @@ def process(args, video_key, video_info, frame_db):
 
         frames = sample_frames(args, frames)
         if not frames:
-            raise RuntimeError("No frames in video")
+            raise RuntimeError("No frame selected")
 
         # Save to database
         frame_db.put(video_key, ith_clip, clip_tmp_dir, frames)
@@ -305,6 +317,8 @@ if "__main__" == __name__:
 
     annotations = json.load(Path(args.annotation_file).open())
 
+    fails = []
+
     if args.threads > 0:
         with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
             jobs = {
@@ -316,16 +330,31 @@ if "__main__" == __name__:
                     video_status = future.result()
                 except Exception as e:
                     tqdm.write("{} : {}".format(jobs[future], e))
+                    fails.append(jobs[future])
                 else:
                     tqdm.write("{} : {}".format(jobs[future], video_status))
     else:
-        for ith, video_info in enumerate(tqdm(annotations)):
+        for video_key, video_info in tqdm(annotations.items()):
             try:
-                video_status = process(args, ith, video_info, frame_db)
+                video_status = process(args, video_key, video_info, frame_db)
             except Exception as e:
                 tqdm.write("{} : {}".format(video_info['path'], e))
+                fails.append(video_info['path'])
             else:
                 tqdm.write("{} : {}".format(video_info['path'], video_status))
 
     frame_db.close()
-    print("Done")
+
+    total = len(annotations)
+    print("Processed {} videos".format(total))
+    if not fails:
+        print("All success! Congratulations!")
+    else:
+        print("{} Success, {} Error".format(total - len(fails), len(fails)))
+        print("Please remove the following video(s) in the annotation file:")
+        with open(args.error_list, "w") as f:
+            for x in fails:
+                print(x)
+                f.write(x + "\n")
+
+    print("All Done!")
