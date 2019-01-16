@@ -17,12 +17,15 @@ class SKVideoDataset(Dataset):
         if resize:
             w, h, *_ = (int(x) for x in resize.split("x")[:2])
             self.base_parameter.update({"-vf": "scale='{}:{}'".format(w, h)})
+        self.videos = sorted([x for x in self.annotation.keys()])
 
     def __len__(self):
-        return len(self.annotation)
+        return len(self.videos)
 
     def __getitem__(self, index):
-        annotation = self.annotation[index]
+        video_id = self.videos[index]
+
+        annotation = self.annotation[video_id]
         video_path = annotation['path']
         clazz = annotation['class']
 
