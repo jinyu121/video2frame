@@ -34,14 +34,14 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     The json file should like
     
     ```json
-    [
-        {
-            "path":"path/to/the/video/file_1.mp4"
+    {
+        "label1": {
+            "path": "path/to/the/video/file_1.mp4"
         },
-        {
-            "path":"path/to/the/video/file_2.mp4"
+        "label2": {
+            "path": "path/to/the/video/file_2.mp4"
         }
-    ]
+    }
     ```
     
 1. ### Extract frames using `video2frame.py`
@@ -200,14 +200,14 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     The json file should like:
     
     ```json
-    [
-        {
-            "path":"path/to/the/video/file_1.mp4",
+    {
+        "random_key_1": {
+            "path": "path/to/the/video/file_1.mp4",
             "class": 1
         },
-        {
-            "path":"path/to/the/video/file_2.mp4",
+        "random_key_2": {
+            "path": "path/to/the/video/file_2.mp4",
             "class": 2
         }
-    ]
+    }
     ```
