@@ -24,10 +24,10 @@ class LMDBStorage(Storage):
         self.database = lmdb.open(path, map_size=1 << 40)
 
     def put(self, video_key, ith_clip, clip_tmp_dir, frame_files):
-        for ith_frame, (frame_id, frame_path) in enumerate(frame_files):
-            data = (clip_tmp_dir / frame_path).open("rb").read()
-            key = "{}/{:03d}/{:08d}".format(video_key, ith_clip, ith_frame)
-            with self.database.begin(write=True, buffers=True) as txn:
+        with self.database.begin(write=True, buffers=True) as txn:
+            for ith_frame, (frame_id, frame_path) in enumerate(frame_files):
+                data = (clip_tmp_dir / frame_path).open("rb").read()
+                key = "{}/{:03d}/{:08d}".format(video_key, ith_clip, ith_frame)
                 txn.put(key.encode(), data)
 
 
