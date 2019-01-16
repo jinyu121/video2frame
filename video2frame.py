@@ -75,8 +75,7 @@ class FileStorage(Storage):
         save_dir = self.base_path / video_key / "{:03d}".format(ith_clip)
         save_dir.mkdir(exist_ok=True, parents=True)
         for ith_frame, (frame_id, frame_path) in enumerate(frame_files):
-            data = (clip_tmp_dir / frame_path).open("rb").read()
-            (save_dir / "{:08d}.jpg".format(ith_frame)).open("wb").write(data)
+            shutil.copy(str((clip_tmp_dir / frame_path)), str(save_dir / "{:08d}.jpg".format(ith_frame)))
 
 
 STORAGE_TYPES = {
