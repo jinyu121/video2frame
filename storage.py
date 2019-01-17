@@ -15,7 +15,7 @@ class Storage:
         raise NotImplementedError()
 
     def close(self):
-        self.database.close()
+        pass
 
 
 class LMDBStorage(Storage):
@@ -30,6 +30,9 @@ class LMDBStorage(Storage):
                 key = "{}/{:03d}/{:08d}".format(video_key, ith_clip, ith_frame)
                 txn.put(key.encode(), data)
 
+    def close(self):
+        self.database.close()
+
 
 class HDF5Storage(Storage):
     def __init__(self, path):
@@ -41,6 +44,9 @@ class HDF5Storage(Storage):
             data = (clip_tmp_dir / frame_path).open("rb").read()
             key = "{}/{:03d}/{:08d}".format(video_key, ith_clip, ith_frame)
             self.database[key] = np.void(data)
+
+    def close(self):
+        self.database.close()
 
 
 class PKLStorage(Storage):
