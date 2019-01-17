@@ -5,7 +5,7 @@ import subprocess
 import warnings
 from concurrent import futures
 from pathlib import Path
-from random import shuffle, random
+from random import shuffle, random, randint
 
 from tqdm import tqdm
 
@@ -99,23 +99,25 @@ def video_to_frames(args, video_file, video_meta, tmp_dir, error_when_empty=True
 @retry()
 def sample_frames(args, frames, error_when_empty=True):
     if args.sample_mode:
-        n = int(args.sample)
-        assert n > 0, "N must >0, but get {}".format(n)
+        assert args.sample > 0, "Sample must >0, but get {}".format(args.sample)
 
         tot = len(frames)
         if args.sample_mode == 1:  # Uniformly sample n frames
-            if n == 1:
+            if args.sample == 1:
                 index = [tot >> 1]
             else:
-                step = (tot - 1.) / (n - 1)
-                index = [round(x * step) for x in range(n)]
+                step = (tot - 1.) / (args.sample - 1)
+                index = [round(x * step) for x in range(args.sample)]
             frames = [frames[x] for x in index]
-        elif args.sample_mode == 2:  # Randomly sample n frames
+        elif args.sample_mode == 2:  # Randomly sample n continuous frames
+            sta = randint(0, max(0, len(frames) - args.sample - 1))
+            frames = frames[sta:sta + args.sample]
+        elif args.sample_mode == 3:  # Randomly sample n frames
             shuffle(frames)
-            frames = frames[:min(n, tot)]
+            frames = frames[:min(args.sample, tot)]
             frames.sort(key=lambda x: x[0])
-        elif args.sample_mode == 3:  # Mod mode.
-            frames = frames[::n]
+        elif args.sample_mode == 4:  # Sample 1 frame every n frames
+            frames = frames[::args.sample]
         else:
             raise AttributeError("Sample mode is not supported")
 

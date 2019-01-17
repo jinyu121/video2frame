@@ -145,7 +145,7 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
                           [--db_type {LMDB,HDF5,FILE,PKL}] [--tmp_dir TMP_DIR]
                           [--error_list ERROR_LIST] [--duration DURATION]
                           [--clips CLIPS] [--resize_mode {0,1,2}]
-                          [--resize RESIZE] [--fps FPS] [--sample_mode {0,1,2,3}]
+                          [--resize RESIZE] [--fps FPS] [--sample_mode {0,1,2,3,4}]
                           [--sample SAMPLE] [--threads THREADS] [--keep]
                           annotation_file
     
@@ -169,12 +169,13 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
                               2: L600 or S600: keep the aspect ration and scale the longer/shorter side to s
       --resize RESIZE       Parameter of resize mode
       --fps FPS             Sample the video at X fps
-      --sample_mode {0,1,2,3}
+      --sample_mode {0,1,2,3,4}
                             Frame sampling options
                               0: Keep all frames
                               1: Uniformly sample n frames
-                              2: Randomly sample n frames
-                              3: Mod mode
+                              2: Randomly sample n continuous frames
+                              3: Randomly sample n frames
+                              4: Sample 1 frame every n frames
       --sample SAMPLE       Parameter of sample mode
       --threads THREADS     Number of threads
       --keep                Do not delete tmp files at last

@@ -52,10 +52,11 @@ def parse_args():
                         help="Frame sampling options\n"
                              "  0: Keep all frames\n"
                              "  1: Uniformly sample n frames\n"
-                             "  2: Randomly sample n frames\n"
-                             "  3: Mod mode"
+                             "  2: Randomly sample n continuous frames\n"
+                             "  3: Randomly sample n frames\n"
+                             "  4: Sample 1 frame every n frames"
                         )
-    parser.add_argument("--sample", type=str, help="Parameter of sample mode")
+    parser.add_argument("--sample", type=int, help="How many frames")
 
     # performance
     parser.add_argument("--threads", type=int, default=0, help="Number of threads")
