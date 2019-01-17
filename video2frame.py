@@ -1,6 +1,8 @@
 import json
+import re
 import shutil
 import subprocess
+import warnings
 from concurrent import futures
 from pathlib import Path
 from random import shuffle, random
@@ -9,6 +11,28 @@ from tqdm import tqdm
 
 from storage import STORAGE_TYPES
 from util import retry, parse_args
+
+ffmpeg_duration_template = re.compile(r"time=\s*(\d+):(\d+):(\d+)\.(\d+)")
+
+
+def get_video_duration(video_file):
+    cmd = [
+        "ffmpeg",
+        "-i", str(video_file),
+        "-f", "null", "-"
+    ]
+
+    output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    result_all = ffmpeg_duration_template.findall(output.decode())
+    if result_all:
+        result = result_all[-1]
+        duration = float(result[0]) * 60 * 60 \
+                   + float(result[1]) * 60 \
+                   + float(result[2]) \
+                   + float(result[3]) * (10 ** -len(result[3]))
+    else:
+        duration = -1
+    return duration
 
 
 def get_video_meta(video_file):
@@ -37,13 +61,19 @@ def video_to_frames(args, video_file, video_meta, tmp_dir, error_when_empty=True
     # Random clip the video
     clip_setting = []
     if args.duration > 0:
-        video_duration = float(video_meta["video"]["duration"])
-        sta = max(0., random() * (video_duration - args.duration))
-        dur = min(args.duration, video_duration - sta)
-        clip_setting.extend([
-            "-ss", "{}".format(sta),
-            "-t", "{}".format(dur)
-        ])
+        try:
+            video_duration = float(video_meta["video"]["duration"])
+        except:
+            video_duration = get_video_duration(video_file)
+        if video_duration > 0:
+            sta = max(0., random() * (video_duration - args.duration))
+            dur = min(args.duration, video_duration - sta)
+            clip_setting.extend([
+                "-ss", "{}".format(sta),
+                "-t", "{}".format(dur)
+            ])
+        else:
+            warnings.warn("Ignore `duration` parameter for video {}.".format(video_file))
 
     cmd = [
         "ffmpeg",
