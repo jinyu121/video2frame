@@ -35,13 +35,22 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     
     ```json
     {
-        "label1": {
-            "path": "path/to/the/video/file_1.mp4",
-            "class": 1
+        "meta": {
+            "class_num": 2,
+            "class_name": [
+                "class_1",
+                "class_2"
+            ]
         },
-        "label2": {
-            "path": "path/to/the/video/file_2.mp4",
-            "class": 2
+        "annotation": {
+            "label1_abcdefg": {
+                "path": "path/to/the/video/file_1.mp4",
+                "class": 1
+            },
+            "label2_asdfghj": {
+                "path": "path/to/the/video/file_2.mp4",
+                "class": 2
+            }
         }
     }
     ```

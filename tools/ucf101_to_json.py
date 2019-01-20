@@ -39,7 +39,14 @@ if "__main__" == __name__:
             "class": clazz_num
         }
 
-    json.dump(data, Path(args.output).open("w"), indent=4)
+    data_all = {
+        "meta": {
+            "class_num": len(classes),
+            "class_name": clazz_name
+        },
+        "annotation": data
+    }
+    json.dump(data_all, Path(args.output).open("w"), indent=4)
 
     print("{} classes, {} videos".format(len(classes), len(data)))
     print("Done")

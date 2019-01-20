@@ -1,13 +1,15 @@
 import json
 from random import random
 
-from skvideo.io import vread, ffprobe
+from skvideo.io import ffprobe, vread
 from torch.utils.data import Dataset
 
 
 class SKVideoDataset(Dataset):
     def __init__(self, annotation, frames, duration=-1, resize="", transform=None):
-        self.annotation = json.load(open(annotation))
+        data = json.load(open(annotation, "r"))
+        self.n_classes = data['meta']["class_num"]
+        self.annotation = data['annotation']
         self.num_frames = frames
         self.clip_duration = duration
         self.transform = transform

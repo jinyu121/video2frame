@@ -18,7 +18,9 @@ class HDF5VideoDataset(Dataset):
         assert self.num_frames_per_clip >= 0
         self.transform = transform
 
-        self.annotation = json.load(open(annotation, "r"))
+        data = json.load(open(annotation, "r"))
+        self.n_classes = data['meta']["class_num"]
+        self.annotation = data['annotation']
         self.database = h5py.File(database, 'r')
         self.videos = sorted([x for x in self.annotation.keys()])
 

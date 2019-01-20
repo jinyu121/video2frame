@@ -32,7 +32,7 @@ if "__main__" == __name__:
     for item in tqdm(video_list):
         # clazz_name = template.sub("something", item["template"])
         clazz_name = item["template"].replace("[", "").replace("]", "")
-        clazz_num = classes[clazz_name]
+        clazz_num = int(classes[clazz_name])
 
         video_path = str(video_folder / "{}.webm".format(item['id']))
         key = hashlib.md5(video_path.encode()).hexdigest()[:8]
@@ -43,7 +43,14 @@ if "__main__" == __name__:
             "class": clazz_num
         }
 
-    json.dump(data, Path(args.output).open("w"), indent=4)
+    data_all = {
+        "meta": {
+            "class_num": len(classes),
+            "class_name": clazz_name
+        },
+        "annotation": data
+    }
+    json.dump(data_all, Path(args.output).open("w"), indent=4)
 
     print("{} classes, {} videos".format(len(classes), len(data)))
     print("Done")

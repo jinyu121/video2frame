@@ -167,17 +167,18 @@ if "__main__" == __name__:
 
     frame_db = STORAGE_TYPES[args.db_type](args.db_name)
 
-    annotations = json.load(Path(args.annotation_file).open())
-
+    annotation_all = json.load(Path(args.annotation_file).open())
+    annotation = annotation_all["annotation"]
+    total = len(annotation)
     fails = []
 
     if args.threads > 0:
         with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
             jobs = {
                 executor.submit(process, args, video_key, video_info, frame_db): video_info['path']
-                for video_key, video_info in annotations.items()
+                for video_key, video_info in annotation.items()
             }
-            for future in tqdm(futures.as_completed(jobs), total=len(annotations)):
+            for future in tqdm(futures.as_completed(jobs), total=total):
                 try:
                     video_status = future.result()
                 except Exception as e:
@@ -186,7 +187,7 @@ if "__main__" == __name__:
                 else:
                     tqdm.write("{} : {}".format(jobs[future], video_status))
     else:
-        for video_key, video_info in tqdm(annotations.items()):
+        for video_key, video_info in tqdm(annotation.items()):
             try:
                 video_status = process(args, video_key, video_info, frame_db)
             except Exception as e:
@@ -197,17 +198,18 @@ if "__main__" == __name__:
 
     frame_db.close()
 
-    total = len(annotations)
     print("Processed {} videos".format(total))
     if not fails:
         print("All success! Congratulations!")
     else:
         print("{} Success, {} Error".format(total - len(fails), len(fails)))
-        annotation_ok = {k: v for k, v in annotations.items() if v['path'] not in fails}
+
+        annotation = {k: v for k, v in annotation.items() if v['path'] not in fails}
+        annotation_all["annotation"] = annotation
         if args.annotation_file.lower().endswith(".json"):
             save_path = args.annotation_file[:-5] + "-fix.json"
         else:
             save_path = args.annotation_file + "-fix.json"
-        json.dump(annotation_ok, Path(save_path).open("w"))
+        json.dump(annotation_all, Path(save_path).open("w"), indent=4)
 
     print("All Done!")
