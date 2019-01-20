@@ -143,8 +143,7 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     ```text
     usage: video2frame.py [-h] [--db_name DB_NAME]
                           [--db_type {LMDB,HDF5,FILE,PKL}] [--tmp_dir TMP_DIR]
-                          [--error_list ERROR_LIST] [--duration DURATION]
-                          [--clips CLIPS] [--resize_mode {0,1,2}]
+                          [--duration DURATION] [--clips CLIPS] [--resize_mode {0,1,2}]
                           [--resize RESIZE] [--fps FPS] [--sample_mode {0,1,2,3,4}]
                           [--sample SAMPLE] [--threads THREADS] [--keep]
                           annotation_file
@@ -158,8 +157,6 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
       --db_type {LMDB,HDF5,FILE,PKL}
                             Type of the database
       --tmp_dir TMP_DIR     Tmp dir
-      --error_list ERROR_LIST
-                            Error list file
       --duration DURATION   Length of the clip
       --clips CLIPS         Num of clips per video
       --resize_mode {0,1,2}

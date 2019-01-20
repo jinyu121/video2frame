@@ -31,7 +31,6 @@ def parse_args():
     parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5", "FILE", "PKL"], default="HDF5",
                         help="Type of the database")
     parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Tmp dir")
-    parser.add_argument("--error_list", type=str, default="", help="Error list file")
 
     # Clips
     parser.add_argument("--duration", type=float, default=-1, help="Length of the clip")
@@ -86,13 +85,6 @@ def modify_args(args):
             args.db_name += ".hdf5"
         elif args.db_type == 'LMDB':
             args.db_name += ".lmdb"
-
-    if not args.error_list:
-        if args.annotation_file.lower().endswith(".json"):
-            args.error_list = args.annotation_file[:-5]
-        else:
-            args.error_list = args.annotation_file
-        args.error_list += "-error.txt"
 
     # Range check
     args.clips = max(args.clips, 1)

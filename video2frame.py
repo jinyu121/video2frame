@@ -5,12 +5,12 @@ import subprocess
 import warnings
 from concurrent import futures
 from pathlib import Path
-from random import shuffle, random, randint
+from random import randint, random, shuffle
 
 from tqdm import tqdm
 
 from storage import STORAGE_TYPES
-from util import retry, parse_args
+from util import parse_args, retry
 
 ffmpeg_duration_template = re.compile(r"time=\s*(\d+):(\d+):(\d+)\.(\d+)")
 
@@ -203,11 +203,6 @@ if "__main__" == __name__:
         print("All success! Congratulations!")
     else:
         print("{} Success, {} Error".format(total - len(fails), len(fails)))
-        print("Please remove the following video(s) in the annotation file:")
-        with open(args.error_list, "w") as f:
-            for x in fails:
-                print(x)
-                f.write(x + "\n")
         annotation_ok = {k: v for k, v in annotations.items() if v['path'] not in fails}
         if args.annotation_file.lower().endswith(".json"):
             save_path = args.annotation_file[:-5] + "-fix.json"
