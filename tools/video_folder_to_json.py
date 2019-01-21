@@ -48,7 +48,7 @@ if "__main__" == __name__:
     data_all = {
         "meta": {
             "class_num": len(classes),
-            "class_name": clazz_name
+            "class_name": classes
         },
         "annotation": data
     }
