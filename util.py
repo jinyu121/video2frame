@@ -22,25 +22,33 @@ def retry(tries=5):
     return deco_retry
 
 
+class RawTextArgumentDefaultsHelpFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                                           argparse.RawTextHelpFormatter):
+    # RawTextHelpFormatter implements _split_lines
+    # ArgumentDefaultsHelpFormatter implements _get_help_string
+    # so we can guess that they will work together just fine.
+    pass
+
+
 def parse_args():
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(formatter_class=RawTextArgumentDefaultsHelpFormatter)
 
     # Names and folders
     parser.add_argument("annotation_file", type=str, help="The annotation file, in json format")
     parser.add_argument("--db_name", type=str, help="The database to store extracted frames")
     parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5", "FILE", "PKL"], default="HDF5",
                         help="Type of the database")
-    parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Tmp dir")
+    parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Temporary folder")
 
     # Clips
-    parser.add_argument("--duration", type=float, default=-1, help="Length of the clip")
     parser.add_argument("--clips", type=int, default=1, help="Num of clips per video")
+    parser.add_argument("--duration", type=float, default=-1, help="Length of each clip")
 
     # Resize mode
     parser.add_argument("--resize_mode", type=int, default=0, choices=[0, 1, 2],
                         help="Resize mode\n"
                              "  0: Do not resize\n"
-                             "  1: 800x600: Resize to W*H\n"
+                             "  1: 800x600: Resize to WxH\n"
                              "  2: L600 or S600: keep the aspect ration and scale the longer/shorter side to s"
                         )
     parser.add_argument("--resize", type=str, help="Parameter of resize mode")
@@ -59,7 +67,7 @@ def parse_args():
 
     # performance
     parser.add_argument("--threads", type=int, default=0, help="Number of threads")
-    parser.add_argument("--keep", action="store_true", help="Do not delete tmp files at last")
+    parser.add_argument("--keep", action="store_true", help="Do not delete temporary files at last")
 
     args = parser.parse_args()
     args = EasyDict(args.__dict__)

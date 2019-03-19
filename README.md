@@ -12,7 +12,7 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
 
 1. ### Establish the environment
     
-    We recommend to use [conda](https://conda.io/) to establish the environment. Just using 
+    We recommend using [conda](https://conda.io/) to establish the environment. Just using 
     
     ```sh
     conda env create -f install/conda-environment.yml
@@ -152,9 +152,10 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     ```text
     usage: video2frame.py [-h] [--db_name DB_NAME]
                           [--db_type {LMDB,HDF5,FILE,PKL}] [--tmp_dir TMP_DIR]
-                          [--duration DURATION] [--clips CLIPS] [--resize_mode {0,1,2}]
-                          [--resize RESIZE] [--fps FPS] [--sample_mode {0,1,2,3,4}]
-                          [--sample SAMPLE] [--threads THREADS] [--keep]
+                          [--clips CLIPS] [--duration DURATION]
+                          [--resize_mode {0,1,2}] [--resize RESIZE] [--fps FPS]
+                          [--sample_mode {0,1,2,3}] [--sample SAMPLE]
+                          [--threads THREADS] [--keep]
                           annotation_file
     
     positional arguments:
@@ -162,29 +163,29 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
     
     optional arguments:
       -h, --help            show this help message and exit
-      --db_name DB_NAME     The database to store extracted frames
+      --db_name DB_NAME     The database to store extracted frames (default: None)
       --db_type {LMDB,HDF5,FILE,PKL}
-                            Type of the database
-      --tmp_dir TMP_DIR     Tmp dir
-      --duration DURATION   Length of the clip
-      --clips CLIPS         Num of clips per video
+                            Type of the database (default: HDF5)
+      --tmp_dir TMP_DIR     Temporary folder (default: /tmp)
+      --clips CLIPS         Num of clips per video (default: 1)
+      --duration DURATION   Length of each clip (default: -1)
       --resize_mode {0,1,2}
                             Resize mode
                               0: Do not resize
-                              1: 800x600: Resize to W*H
-                              2: L600 or S600: keep the aspect ration and scale the longer/shorter side to s
-      --resize RESIZE       Parameter of resize mode
-      --fps FPS             Sample the video at X fps
-      --sample_mode {0,1,2,3,4}
+                              1: 800x600: Resize to WxH
+                              2: L600 or S600: keep the aspect ration and scale the longer/shorter side to s (default: 0)
+      --resize RESIZE       Parameter of resize mode (default: None)
+      --fps FPS             Sample the video at X fps (default: -1)
+      --sample_mode {0,1,2,3}
                             Frame sampling options
                               0: Keep all frames
                               1: Uniformly sample n frames
                               2: Randomly sample n continuous frames
                               3: Randomly sample n frames
-                              4: Sample 1 frame every n frames
-      --sample SAMPLE       Parameter of sample mode
-      --threads THREADS     Number of threads
-      --keep                Do not delete tmp files at last
+                              4: Sample 1 frame every n frames (default: 0)
+      --sample SAMPLE       How many frames (default: None)
+      --threads THREADS     Number of threads (default: 0)
+      --keep                Do not delete temporary files at last (default: False)
     ```
     
 ## Tools
@@ -214,7 +215,7 @@ So I re-wrote the code. And now, it is a new wheel. It is hard to make a PR sinc
 
 1. `pytorch_skvideo_dataset.py`
 
-    Get frames using `skvideo` package, when training and evaluating. It is OKay when your batch size is small, and your cpus are powerful enough.
+    Get frames using `skvideo` package, when training and evaluating. It is OKay when your batch size is small, and your CPUs are powerful enough.
 
 1. `pytorch_lmdb_video_dataset.py`
 
