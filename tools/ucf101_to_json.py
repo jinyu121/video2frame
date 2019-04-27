@@ -1,15 +1,21 @@
 import hashlib
 import json
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from pathlib import Path
 
 from tqdm import tqdm
 
-video_ext = ['.mp4', '.avi', '.flv', '.mkv', '.webm', '.mov']
-
 
 def parse_args():
-    parser = ArgumentParser()
+    description = """
+    This is a json generator that converts the `UCF101` dataset.
+    
+    You should provide the following path(s):
+    1. The class-definition file (e.g. /Dataset/UCF101/annotation/classInd.txt).
+    2. The annotation file (e.g. /Dataset/UCF101/annotation/trainlist01.txt).
+    3. The video root folder (e.g. /Dataset/UCF101/video).
+    """
+    parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("classes", type=str, help="The class definition file")
     parser.add_argument("annotation", type=str, help="The annotation txt file")
     parser.add_argument("video_folder", type=str, help="The video folder")
