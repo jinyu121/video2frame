@@ -1,6 +1,6 @@
 import hashlib
 import json
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from pathlib import Path
 
 from tqdm import tqdm
@@ -9,7 +9,22 @@ video_ext = ['.mp4', '.avi', '.flv', '.mkv', '.webm', '.mov']
 
 
 def parse_args():
-    parser = ArgumentParser()
+    description = """
+    This is a json generator, where the videos are arranged in this way:
+
+    ```text
+    root/swimming/xxx.mp4
+    root/swimming/xxy.avi
+    root/swimming/xxz.flv
+    
+    root/dancing/123.mkv
+    root/dancing/nsdf3.webm
+    root/dancing/asd932_.mov
+    ``` 
+    
+    You should provide the path of the root folder.
+    """
+    parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("video_folder", type=str, help="The video folder")
     parser.add_argument("output", type=str, help="The annotation json file")
     return parser.parse_args()
