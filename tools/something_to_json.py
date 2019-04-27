@@ -1,13 +1,21 @@
 import hashlib
 import json
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from pathlib import Path
 
 from tqdm import tqdm
 
 
 def parse_args():
-    parser = ArgumentParser()
+    description = """
+    This is a json generator that converts the `Something-Something` dataset.
+
+    You should provide the following path(s):
+    1. The class-definition file (e.g. /Dataset/Something/annotation/something-something-v2-labels.json).
+    2. The annotation file (e.g. /Dataset/Something/annotation/something-something-v2-train.json).
+    3. The video root folder (e.g. /Dataset/Something/video).
+    """
+    parser = ArgumentParser(description=description, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("classes", type=str, help="The class definition json file")
     parser.add_argument("annotation", type=str, help="The annotation json file")
     parser.add_argument("video_folder", type=str, help="The video folder")
