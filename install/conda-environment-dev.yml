@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - python
+  - ffmpeg
   - tqdm
   - numpy
   - lmdb

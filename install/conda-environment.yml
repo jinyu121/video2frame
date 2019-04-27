@@ -1,6 +1,7 @@
 name: video2frame
 dependencies:
   - python
+  - ffmpeg
   - tqdm
   - numpy
   - lmdb
