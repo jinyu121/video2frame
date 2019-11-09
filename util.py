@@ -55,7 +55,7 @@ def parse_args():
 
     # Frame sampling options
     parser.add_argument("--fps", type=float, default=-1, help="Sample the video at X fps")
-    parser.add_argument("--sample_mode", type=int, default=0, choices=[0, 1, 2, 3],
+    parser.add_argument("--sample_mode", type=int, default=0, choices=[0, 1, 2, 3, 4],
                         help="Frame sampling options\n"
                              "  0: Keep all frames\n"
                              "  1: Uniformly sample n frames\n"
